@@ -142,6 +142,7 @@ export default function App() {
         {!initialLoad && activeTab === "decks" && (
           <DeckView
             ids={ids}
+            byId={byId}
             themeGroups={themeGroups}
             ficheGroups={ficheGroups}
             manifest={manifest}

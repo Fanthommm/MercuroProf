@@ -10,8 +10,19 @@ import {
 import FicheFilter from "./FicheFilter";
 import StatTiles from "./StatTiles";
 
+function describeCard(card) {
+  if (!card || card.state === "new") return { label: "Nouvelle", dot: "new" };
+  if (card.state === "learning" || card.state === "relearning") {
+    return { label: "En apprentissage", dot: "learning" };
+  }
+  return new Date(card.due) <= new Date()
+    ? { label: "À revoir", dot: "due" }
+    : { label: "Acquise", dot: "ahead" };
+}
+
 export default function DeckView({
   ids,
+  byId,
   themeGroups,
   ficheGroups,
   manifest,
@@ -21,6 +32,16 @@ export default function DeckView({
   loadError,
 }) {
   const [selectedFiche, setSelectedFiche] = useState("all");
+  const [expandedThemes, setExpandedThemes] = useState(() => new Set());
+
+  function toggleTheme(theme) {
+    setExpandedThemes((prev) => {
+      const next = new Set(prev);
+      if (next.has(theme)) next.delete(theme);
+      else next.add(theme);
+      return next;
+    });
+  }
 
   const filteredIds =
     selectedFiche === "all"
@@ -260,14 +281,23 @@ export default function DeckView({
           const s = computeStats(g.ids, progress);
           const total = g.ids.length;
           const pct = (n) => (total ? (n / total) * 100 : 0);
+          const isOpen = expandedThemes.has(g.theme);
           return (
             <div className="theme-row" key={g.theme}>
-              <div className="head">
-                <span className="name">{g.theme}</span>
+              <button
+                type="button"
+                className="head theme-head-btn"
+                onClick={() => toggleTheme(g.theme)}
+                aria-expanded={isOpen}
+              >
+                <span className="name">
+                  {g.theme}
+                  <span className="chevron">{isOpen ? "▾" : "▸"}</span>
+                </span>
                 <span className="count">
                   {s.ahead} / {total} acquises
                 </span>
-              </div>
+              </button>
               <div className="theme-bar">
                 <span
                   className="seg-ahead"
@@ -283,6 +313,31 @@ export default function DeckView({
                 />
                 <span className="seg-new" style={{ width: `${pct(s.neu)}%` }} />
               </div>
+
+              {isOpen && (
+                <div className="question-list">
+                  {g.ids.map((id) => {
+                    const q = byId[id];
+                    if (!q) return null;
+                    const info = describeCard(progress[id]);
+                    const card = progress[id];
+                    const meta = !card || card.reps === 0
+                      ? "Jamais révisée"
+                      : card.lapses > 0
+                      ? `${card.reps} révisions · ${card.lapses} fois « Encore »`
+                      : `${card.reps} révisions`;
+                    return (
+                      <div className="question-row" key={id}>
+                        <i className={`dot ${info.dot}`} />
+                        <span className="q-text">{q.question}</span>
+                        <span className="q-meta">
+                          {info.label} · {meta}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           );
         })}

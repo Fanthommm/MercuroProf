@@ -350,13 +350,67 @@ footer {
   margin-bottom: 8px;
 }
 
+.theme-head-btn {
+  width: 100%;
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: inherit;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+
 .theme-row .name { font-weight: 600; font-size: 0.88rem; }
+.theme-row .name .chevron {
+  margin-left: 6px;
+  color: var(--ink-soft);
+  font-size: 0.7rem;
+}
+
 .theme-row .count {
   font-family: "IBM Plex Mono", monospace;
   font-variant-numeric: tabular-nums;
   font-size: 0.74rem;
   color: var(--ink-soft);
   white-space: nowrap;
+}
+
+.question-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--line);
+}
+
+.question-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 0.82rem;
+}
+
+.question-row .dot {
+  margin-top: 6px;
+  flex-shrink: 0;
+  margin-right: 0;
+}
+
+.question-row .q-text {
+  flex: 1;
+  color: var(--ink);
+  line-height: 1.35;
+}
+
+.question-row .q-meta {
+  font-family: "IBM Plex Mono", monospace;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.68rem;
+  color: var(--ink-soft);
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .theme-bar {
