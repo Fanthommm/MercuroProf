@@ -7,6 +7,7 @@ import {
   setUploadSecret,
   uploadFiche,
 } from "../lib/fiches";
+import FicheFilter from "./FicheFilter";
 import StatTiles from "./StatTiles";
 
 export default function DeckView({
@@ -19,7 +20,24 @@ export default function DeckView({
   flash,
   loadError,
 }) {
-  const totals = computeTotals(ids, progress);
+  const [selectedFiche, setSelectedFiche] = useState("all");
+
+  const filteredIds =
+    selectedFiche === "all"
+      ? ids
+      : ficheGroups.find((g) => g.fiche === selectedFiche)?.ids || ids;
+
+  const filteredThemeGroups =
+    selectedFiche === "all"
+      ? themeGroups
+      : (() => {
+          const scoped = new Set(filteredIds);
+          return themeGroups
+            .map((g) => ({ theme: g.theme, ids: g.ids.filter((id) => scoped.has(id)) }))
+            .filter((g) => g.ids.length > 0);
+        })();
+
+  const totals = computeTotals(filteredIds, progress);
   const fileInputRef = useRef(null);
   const [pendingFile, setPendingFile] = useState(null);
   const [ficheName, setFicheName] = useState("");
@@ -104,10 +122,16 @@ export default function DeckView({
 
   return (
     <section className="view">
+      <FicheFilter
+        ficheGroups={ficheGroups}
+        active={selectedFiche}
+        onChange={setSelectedFiche}
+      />
+
       <StatTiles
         className="totals-row"
         items={[
-          [`${totals.seen} / ${ids.length}`, "Cartes vues"],
+          [`${totals.seen} / ${filteredIds.length}`, "Cartes vues"],
           [totals.reps, "Révisions"],
           [
             totals.avgEase === null ? "—" : totals.avgEase.toFixed(2),
@@ -232,7 +256,7 @@ export default function DeckView({
       </div>
 
       <div className="theme-list">
-        {themeGroups.map((g) => {
+        {filteredThemeGroups.map((g) => {
           const s = computeStats(g.ids, progress);
           const total = g.ids.length;
           const pct = (n) => (total ? (n / total) * 100 : 0);
