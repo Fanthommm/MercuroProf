@@ -7,8 +7,14 @@ import StatsView from "./components/StatsView";
 import Footer from "./components/Footer";
 
 export default function App() {
-  const [progress, setProgress] = useLocalStorageState("fiches-cirrhose-progress-v1", {});
-  const [activeFiche, setActiveFiche] = useLocalStorageState("fiches-cirrhose-filter-v1", "all");
+  const [progress, setProgress] = useLocalStorageState(
+    "fiches-cirrhose-progress-v1",
+    {},
+  );
+  const [activeFiche, setActiveFiche] = useLocalStorageState(
+    "fiches-cirrhose-filter-v1",
+    "all",
+  );
   const [activeTab, setActiveTab] = useState("review");
   const [status, setStatus] = useState("");
 
@@ -32,7 +38,8 @@ export default function App() {
           setImportedQuestions(results.flat());
         }
       } catch (e) {
-        if (!cancelled) setFichesError(e.message || "Chargement des fiches impossible.");
+        if (!cancelled)
+          setFichesError(e.message || "Chargement des fiches impossible.");
       } finally {
         if (!cancelled) setFichesLoading(false);
       }
@@ -103,15 +110,16 @@ export default function App() {
     setProgress((prev) => ({ ...prev, [id]: updatedCard }));
   }
 
-  const initialLoad = fichesLoading && manifest.length === 0 && importedQuestions.length === 0;
+  const initialLoad =
+    fichesLoading && manifest.length === 0 && importedQuestions.length === 0;
 
   return (
     <div className="app">
       <div className="app-inner">
         <header className="masthead">
           <div>
-            <span className="eyebrow">Carnet de révision</span>
-            <h1>Fiches Cirrhose 🌸</h1>
+            <span className="eyebrow">Outil de révision</span>
+            <h1>MercuroProf 🌸</h1>
           </div>
         </header>
 
