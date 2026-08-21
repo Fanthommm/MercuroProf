@@ -71,7 +71,7 @@ export default function StatsView({
     if (!entry) return;
     setBusy(true);
     try {
-      await deleteFiche(entry.pathname);
+      await deleteFiche(entry.url || entry.pathname);
       flash(`Fiche « ${g.fiche} » retirée.`);
       onFichesChanged();
     } catch (e) {
@@ -96,6 +96,14 @@ export default function StatsView({
         <span className="section-label">Mes fiches</span>
 
         {loadError && <p className="csv-hint">Fiches partagées indisponibles ({loadError}).</p>}
+
+        {manifest
+          .filter((m) => m.error || !ficheGroups.some((g) => g.fiche === m.name))
+          .map((m) => (
+            <p className="csv-hint" key={m.pathname}>
+              ⚠️ « {m.name} » ({m.pathname}) : {m.error || "0 question reconnue dans ce CSV"}
+            </p>
+          ))}
 
         <div className="fiche-list">
           {ficheGroups.map((g) => (

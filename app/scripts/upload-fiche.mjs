@@ -21,7 +21,7 @@ if (!process.env.BLOB_READ_WRITE_TOKEN) {
 }
 
 const csv = readFileSync(filePath, "utf-8");
-const pathname = `fiches/${encodeURIComponent(name.trim())}.csv`;
+const pathname = `fiches/${name.trim().replace(/\//g, "-")}.csv`;
 
 const blob = await put(pathname, csv, {
   access: "private",

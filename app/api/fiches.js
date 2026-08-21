@@ -9,23 +9,49 @@ function isAuthorized(req) {
 }
 
 function ficheNameFromPathname(pathname) {
-  return decodeURIComponent(pathname.slice(PREFIX.length).replace(/\.csv$/, ""));
+  return pathname.slice(PREFIX.length).replace(/\.csv$/, "");
+}
+
+function sanitizeFicheName(name) {
+  return name.trim().replace(/\//g, "-");
 }
 
 export default async function handler(req, res) {
   if (req.method === "GET") {
-    const { blobs } = await list({ prefix: PREFIX });
+    let blobs;
+    try {
+      ({ blobs } = await list({ prefix: PREFIX }));
+    } catch (e) {
+      console.error("list() failed:", e);
+      res.status(500).json({ error: `list failed: ${e.message}` });
+      return;
+    }
+
     const fiches = await Promise.all(
       blobs.map(async (b) => {
-        const result = await get(b.pathname, { access: "private" });
-        const csv = result ? await new Response(result.stream).text() : "";
-        return {
-          pathname: b.pathname,
-          name: ficheNameFromPathname(b.pathname),
-          uploadedAt: b.uploadedAt,
-          size: b.size,
-          csv
-        };
+        try {
+          const result = await get(b.url, { access: "private" });
+          const csv = result ? await new Response(result.stream).text() : "";
+          return {
+            pathname: b.pathname,
+            url: b.url,
+            name: ficheNameFromPathname(b.pathname),
+            uploadedAt: b.uploadedAt,
+            size: b.size,
+            csv
+          };
+        } catch (e) {
+          console.error(`get() failed for ${b.pathname}:`, e);
+          return {
+            pathname: b.pathname,
+            url: b.url,
+            name: ficheNameFromPathname(b.pathname),
+            uploadedAt: b.uploadedAt,
+            size: b.size,
+            csv: "",
+            error: e.message
+          };
+        }
       })
     );
     res.status(200).json({ fiches });
@@ -42,7 +68,7 @@ export default async function handler(req, res) {
       res.status(400).json({ error: "name et csv requis" });
       return;
     }
-    const pathname = `${PREFIX}${encodeURIComponent(name.trim())}.csv`;
+    const pathname = `${PREFIX}${sanitizeFicheName(name)}.csv`;
     const blob = await put(pathname, csv, {
       access: "private",
       addRandomSuffix: false,
