@@ -10,10 +10,10 @@ export default function TabNav({ active, onChange }) {
       </button>
       <button
         type="button"
-        className={`tab-btn${active === "stats" ? " active" : ""}`}
-        onClick={() => onChange("stats")}
+        className={`tab-btn${active === "decks" ? " active" : ""}`}
+        onClick={() => onChange("decks")}
       >
-        Statistiques
+        Fiches
       </button>
     </div>
   );

@@ -1,9 +1,15 @@
 import { useRef, useState } from "react";
 import { computeStats, computeTotals } from "../lib/scheduler";
-import { deleteFiche, getUploadSecret, questionsFromCSV, setUploadSecret, uploadFiche } from "../lib/fiches";
+import {
+  deleteFiche,
+  getUploadSecret,
+  questionsFromCSV,
+  setUploadSecret,
+  uploadFiche,
+} from "../lib/fiches";
 import StatTiles from "./StatTiles";
 
-export default function StatsView({
+export default function DeckView({
   ids,
   themeGroups,
   ficheGroups,
@@ -11,7 +17,7 @@ export default function StatsView({
   progress,
   onFichesChanged,
   flash,
-  loadError
+  loadError,
 }) {
   const totals = computeTotals(ids, progress);
   const fileInputRef = useRef(null);
@@ -29,7 +35,12 @@ export default function StatsView({
     const file = e.target.files[0];
     if (!file) return;
     setPendingFile(file);
-    setFicheName(file.name.replace(/\.[^.]+$/, "").replace(/[_-]+/g, " ").trim());
+    setFicheName(
+      file.name
+        .replace(/\.[^.]+$/, "")
+        .replace(/[_-]+/g, " ")
+        .trim(),
+    );
   }
 
   function cancelImport() {
@@ -49,7 +60,9 @@ export default function StatsView({
     const text = await pendingFile.text();
     const preview = questionsFromCSV(text, { pathname: "preview", name });
     if (!preview.length) {
-      flash("Fichier illisible ou mal formé (colonnes attendues : Theme, Question, Reponse).");
+      flash(
+        "Fichier illisible ou mal formé (colonnes attendues : Theme, Question, Reponse).",
+      );
       return;
     }
 
@@ -60,7 +73,11 @@ export default function StatsView({
       cancelImport();
       onFichesChanged();
     } catch (e) {
-      flash(e.message === "unauthorized" ? "Mot de passe incorrect." : "Envoi impossible.");
+      flash(
+        e.message === "unauthorized"
+          ? "Mot de passe incorrect."
+          : "Envoi impossible.",
+      );
     } finally {
       setBusy(false);
     }
@@ -75,7 +92,11 @@ export default function StatsView({
       flash(`Fiche « ${g.fiche} » retirée.`);
       onFichesChanged();
     } catch (e) {
-      flash(e.message === "unauthorized" ? "Mot de passe incorrect." : "Suppression impossible.");
+      flash(
+        e.message === "unauthorized"
+          ? "Mot de passe incorrect."
+          : "Suppression impossible.",
+      );
     } finally {
       setBusy(false);
     }
@@ -88,20 +109,30 @@ export default function StatsView({
         items={[
           [`${totals.seen} / ${ids.length}`, "Cartes vues"],
           [totals.reps, "Révisions"],
-          [totals.avgEase === null ? "—" : totals.avgEase.toFixed(2), "Facilité moy."]
+          [
+            totals.avgEase === null ? "—" : totals.avgEase.toFixed(2),
+            "Facilité moy.",
+          ],
         ]}
       />
 
       <div className="fiche-manager">
         <span className="section-label">Mes fiches</span>
 
-        {loadError && <p className="csv-hint">Fiches partagées indisponibles ({loadError}).</p>}
+        {loadError && (
+          <p className="csv-hint">
+            Fiches partagées indisponibles ({loadError}).
+          </p>
+        )}
 
         {manifest
-          .filter((m) => m.error || !ficheGroups.some((g) => g.fiche === m.name))
+          .filter(
+            (m) => m.error || !ficheGroups.some((g) => g.fiche === m.name),
+          )
           .map((m) => (
             <p className="csv-hint" key={m.pathname}>
-              ⚠️ « {m.name} » ({m.pathname}) : {m.error || "0 question reconnue dans ce CSV"}
+              ⚠️ « {m.name} » ({m.pathname}) :{" "}
+              {m.error || "0 question reconnue dans ce CSV"}
             </p>
           ))}
 
@@ -139,10 +170,17 @@ export default function StatsView({
           + Importer une fiche (CSV)
         </button>
         <p className="csv-hint">
-          Colonnes attendues : <code>Theme</code>, <code>Question</code>, <code>Reponse</code> — visible
-          sur tous les appareils une fois envoyée.
+          Colonnes attendues : <code>Theme</code>, <code>Question</code>,{" "}
+          <code>Reponse</code> — visible sur tous les appareils une fois
+          envoyée.
         </p>
-        <input ref={fileInputRef} type="file" accept=".csv,text/csv" hidden onChange={handleFileChosen} />
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".csv,text/csv"
+          hidden
+          onChange={handleFileChosen}
+        />
 
         {pendingFile && (
           <div className="import-confirm">
@@ -154,10 +192,20 @@ export default function StatsView({
               maxLength={80}
             />
             <div className="import-actions">
-              <button type="button" className="ghost-btn primary" disabled={busy} onClick={confirmImport}>
+              <button
+                type="button"
+                className="ghost-btn primary"
+                disabled={busy}
+                onClick={confirmImport}
+              >
                 Ajouter
               </button>
-              <button type="button" className="ghost-btn" disabled={busy} onClick={cancelImport}>
+              <button
+                type="button"
+                className="ghost-btn"
+                disabled={busy}
+                onClick={cancelImport}
+              >
                 Annuler
               </button>
             </div>
@@ -166,10 +214,21 @@ export default function StatsView({
       </div>
 
       <div className="legend">
-        <span><i className="dot ahead" />Acquises</span>
-        <span><i className="dot due" />À revoir</span>
-        <span><i className="dot learning" />En cours</span>
-        <span><i className="dot new" />Nouvelles</span>
+        <span>
+          <i className="dot ahead" />
+          Acquises
+        </span>
+        <span>
+          <i className="dot due" />À revoir
+        </span>
+        <span>
+          <i className="dot learning" />
+          En cours
+        </span>
+        <span>
+          <i className="dot new" />
+          Nouvelles
+        </span>
       </div>
 
       <div className="theme-list">
@@ -186,9 +245,18 @@ export default function StatsView({
                 </span>
               </div>
               <div className="theme-bar">
-                <span className="seg-ahead" style={{ width: `${pct(s.ahead)}%` }} />
-                <span className="seg-due" style={{ width: `${pct(s.dueNow)}%` }} />
-                <span className="seg-learning" style={{ width: `${pct(s.learning)}%` }} />
+                <span
+                  className="seg-ahead"
+                  style={{ width: `${pct(s.ahead)}%` }}
+                />
+                <span
+                  className="seg-due"
+                  style={{ width: `${pct(s.dueNow)}%` }}
+                />
+                <span
+                  className="seg-learning"
+                  style={{ width: `${pct(s.learning)}%` }}
+                />
                 <span className="seg-new" style={{ width: `${pct(s.neu)}%` }} />
               </div>
             </div>

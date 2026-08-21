@@ -3,7 +3,7 @@ import { useLocalStorageState } from "./lib/storage";
 import { fetchFicheManifest, questionsFromCSV } from "./lib/fiches";
 import TabNav from "./components/TabNav";
 import ReviewView from "./components/ReviewView";
-import StatsView from "./components/StatsView";
+import DeckView from "./components/DeckView";
 import Footer from "./components/Footer";
 
 export default function App() {
@@ -139,8 +139,8 @@ export default function App() {
           />
         )}
 
-        {!initialLoad && activeTab === "stats" && (
-          <StatsView
+        {!initialLoad && activeTab === "decks" && (
+          <DeckView
             ids={ids}
             themeGroups={themeGroups}
             ficheGroups={ficheGroups}
