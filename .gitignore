@@ -1,6 +1,9 @@
 __pycache__
 .vscode
 
+# Secrets - session/auth state, never commit
+dev_utils/.lisa_auth_state.json
+
 # Potentiellement à remettre plus tard
 fiches LiSA
 csv_questions
