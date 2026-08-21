@@ -1,0 +1,177 @@
+[
+  [
+    "167",
+    "/lisa/2026/H%C3%A9patites_virales",
+    "Hépatites virales",
+    "Gastroentérologie (CDUHGE)",
+    ""
+  ],
+  [
+    "271",
+    "/lisa/2026/Reflux_gastro-%C5%93sophagien_chez_le_nourrisson,_chez_l%27enfant_et_chez_l%27adulte._Hernie_hiatale",
+    "Reflux gastro-œsophagien chez le nourrisson, chez l'enfant et chez l'adulte. Hernie hiatale",
+    "Gastroentérologie (CDUHGE)",
+    "Pédiatrie (CNPU)"
+  ],
+  [
+    "272",
+    "/lisa/2026/Ulc%C3%A8re_gastrique_et_duod%C3%A9nal._Gastrite",
+    "Ulcère gastrique et duodénal. Gastrite",
+    "Gastroentérologie (CDUHGE)",
+    ""
+  ],
+  [
+    "273",
+    "/lisa/2026/Dysphagie",
+    "Dysphagie",
+    "Gastroentérologie (CDUHGE)",
+    ""
+  ],
+  [
+    "274",
+    "/lisa/2026/Vomissements_du_nourrisson,_de_l%27enfant_et_de_l%27adulte",
+    "Vomissements du nourrisson, de l'enfant et de l'adulte",
+    "Gastroentérologie (CDUHGE)",
+    "Pédiatrie (CNPU)"
+  ],
+  [
+    "276",
+    "/lisa/2026/H%C3%A9patom%C3%A9galie_et_masse_abdominale",
+    "Hépatomégalie et masse abdominale",
+    "Gastroentérologie (CDUHGE)",
+    ""
+  ],
+  [
+    "277",
+    "/lisa/2026/Lithiase_biliaire_et_complications",
+    "Lithiase biliaire et complications",
+    "Gastroentérologie (CDUHGE)",
+    ""
+  ],
+  [
+    "278",
+    "/lisa/2026/Ict%C3%A8re_de_l%27adulte_et_de_l%27enfant",
+    "Ictère de l'adulte et de l'enfant",
+    "Gastroentérologie (CDUHGE)",
+    "Pédiatrie (CNPU)"
+  ],
+  [
+    "279",
+    "/lisa/2026/Cirrhose_et_complications",
+    "Cirrhose et complications",
+    "Gastroentérologie (CDUHGE)",
+    ""
+  ],
+  [
+    "280",
+    "/lisa/2026/Ascite",
+    "Ascite",
+    "Gastroentérologie (CDUHGE)",
+    ""
+  ],
+  [
+    "281",
+    "/lisa/2026/Pancr%C3%A9atite_chronique",
+    "Pancréatite chronique",
+    "Gastroentérologie (CDUHGE)",
+    ""
+  ],
+  [
+    "282",
+    "/lisa/2026/Maladies_inflammatoires_chroniques_de_l%27intestin_(MICI)_chez_l%27adulte",
+    "Maladies inflammatoires chroniques de l'intestin (MICI) chez l'adulte",
+    "Gastroentérologie (CDUHGE)",
+    ""
+  ],
+  [
+    "283",
+    "/lisa/2026/Constipation_chez_l%27enfant_et_l%27adulte",
+    "Constipation chez l'enfant et l'adulte",
+    "Médecine générale (CNGE) • Gastroentérologie (CDUHGE)",
+    "Pédiatrie (CNPU)"
+  ],
+  [
+    "284",
+    "/lisa/2026/Colopathie_fonctionnelle",
+    "Colopathie fonctionnelle",
+    "Gastroentérologie (CDUHGE)",
+    ""
+  ],
+  [
+    "285",
+    "/lisa/2026/Diarrh%C3%A9e_chronique_chez_l%27adulte_et_l%27enfant",
+    "Diarrhée chronique chez l'adulte et l'enfant",
+    "Gastroentérologie (CDUHGE)",
+    "Pédiatrie (CNPU)"
+  ],
+  [
+    "287",
+    "/lisa/2026/Diverticulose_colique_et_diverticulite_aigu%C3%AB_du_sigmo%C3%AFde",
+    "Diverticulose colique et diverticulite aiguë du sigmoïde",
+    "Chirurgie viscérale et digestive (CCVD)",
+    "Gastroentérologie (CDUHGE)"
+  ],
+  [
+    "288",
+    "/lisa/2026/Pathologie_h%C3%A9morro%C3%AFdaire",
+    "Pathologie hémorroïdaire",
+    "Chirurgie viscérale et digestive (CCVD)",
+    "Gastroentérologie (CDUHGE)"
+  ],
+  [
+    "289",
+    "/lisa/2026/Hernie_pari%C3%A9tale_chez_l%27enfant_et_l%27adulte",
+    "Hernie pariétale chez l'enfant et l'adulte",
+    "Chirurgie viscérale et digestive (CCVD) • Gastroentérologie (CDUHGE)",
+    ""
+  ],
+  [
+    "301",
+    "/lisa/2026/Tumeurs_du_colon_et_du_rectum",
+    "Tumeurs du colon et du rectum",
+    "Gastroentérologie (CDUHGE)",
+    ""
+  ],
+  [
+    "303",
+    "/lisa/2026/Tumeurs_de_l%27estomac",
+    "Tumeurs de l'estomac",
+    "Gastroentérologie (CDUHGE)",
+    ""
+  ],
+  [
+    "304",
+    "/lisa/2026/Tumeurs_du_foie,_primitives_et_secondaires",
+    "Tumeurs du foie, primitives et secondaires",
+    "Gastroentérologie (CDUHGE)",
+    ""
+  ],
+  [
+    "305",
+    "/lisa/2026/Tumeurs_de_l%27%C5%93sophage",
+    "Tumeurs de l'œsophage",
+    "Gastroentérologie (CDUHGE)",
+    "Chirurgie thoracique et Cardio-Vasculaire (CFCTCV)"
+  ],
+  [
+    "308",
+    "/lisa/2026/Tumeurs_du_pancr%C3%A9as",
+    "Tumeurs du pancréas",
+    "Gastroentérologie (CDUHGE)",
+    ""
+  ],
+  [
+    "355",
+    "/lisa/2026/H%C3%A9morragie_digestive",
+    "Hémorragie digestive",
+    "Médecine Intensive Réanimation (CEMIR) • Médecine d'urgence (CNUMU) • Anesthésie Réanimation Médecine Péri Opératoire (CNEAR) • Gastroentérologie (CDUHGE)",
+    ""
+  ],
+  [
+    "358",
+    "/lisa/2026/Pancr%C3%A9atite_aigu%C3%AB",
+    "Pancréatite aiguë",
+    "Médecine Intensive Réanimation (CEMIR) • Médecine d'urgence (CNUMU) • Anesthésie Réanimation Médecine Péri Opératoire (CNEAR) • Gastroentérologie (CDUHGE)",
+    ""
+  ]
+]
