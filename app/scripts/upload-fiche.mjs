@@ -24,11 +24,10 @@ const csv = readFileSync(filePath, "utf-8");
 const pathname = `fiches/${encodeURIComponent(name.trim())}.csv`;
 
 const blob = await put(pathname, csv, {
-  access: "public",
+  access: "private",
   addRandomSuffix: false,
   allowOverwrite: true,
   contentType: "text/csv; charset=utf-8"
 });
 
 console.log(`Envoyé : ${blob.pathname}`);
-console.log(blob.url);

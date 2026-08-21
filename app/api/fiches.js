@@ -1,4 +1,4 @@
-import { list, put, del } from "@vercel/blob";
+import { list, put, del, get } from "@vercel/blob";
 
 const PREFIX = "fiches/";
 
@@ -15,13 +15,19 @@ function ficheNameFromPathname(pathname) {
 export default async function handler(req, res) {
   if (req.method === "GET") {
     const { blobs } = await list({ prefix: PREFIX });
-    const fiches = blobs.map((b) => ({
-      pathname: b.pathname,
-      url: b.url,
-      name: ficheNameFromPathname(b.pathname),
-      uploadedAt: b.uploadedAt,
-      size: b.size
-    }));
+    const fiches = await Promise.all(
+      blobs.map(async (b) => {
+        const result = await get(b.pathname, { access: "private" });
+        const csv = result ? await new Response(result.stream).text() : "";
+        return {
+          pathname: b.pathname,
+          name: ficheNameFromPathname(b.pathname),
+          uploadedAt: b.uploadedAt,
+          size: b.size,
+          csv
+        };
+      })
+    );
     res.status(200).json({ fiches });
     return;
   }
@@ -38,12 +44,12 @@ export default async function handler(req, res) {
     }
     const pathname = `${PREFIX}${encodeURIComponent(name.trim())}.csv`;
     const blob = await put(pathname, csv, {
-      access: "public",
+      access: "private",
       addRandomSuffix: false,
       allowOverwrite: true,
       contentType: "text/csv; charset=utf-8"
     });
-    res.status(200).json({ pathname: blob.pathname, url: blob.url });
+    res.status(200).json({ pathname: blob.pathname });
     return;
   }
 

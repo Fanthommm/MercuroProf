@@ -26,13 +26,7 @@ export default function App() {
       setFichesError(null);
       try {
         const list = await fetchFicheManifest();
-        const results = await Promise.all(
-          list.map(async (f) => {
-            const res = await fetch(f.url);
-            const text = await res.text();
-            return questionsFromCSV(text, f);
-          })
-        );
+        const results = list.map((f) => questionsFromCSV(f.csv, f));
         if (!cancelled) {
           setManifest(list);
           setImportedQuestions(results.flat());
