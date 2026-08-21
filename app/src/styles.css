@@ -463,6 +463,16 @@ footer {
   color: var(--ink);
 }
 
+.fiche-manager > input[type="text"] {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 9px 12px;
+  font-family: "Figtree", sans-serif;
+  font-size: 0.85rem;
+  background: var(--paper);
+  color: var(--ink);
+}
+
 .import-actions { display: flex; gap: 8px; }
 
 .csv-hint { margin: 0; font-size: 0.68rem; color: var(--ink-soft); }

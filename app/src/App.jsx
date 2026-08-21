@@ -1,33 +1,60 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useLocalStorageState } from "./lib/storage";
-import { BUILTIN_QUESTIONS } from "./data/questions";
+import { fetchFicheManifest, questionsFromCSV } from "./lib/fiches";
 import TabNav from "./components/TabNav";
 import ReviewView from "./components/ReviewView";
 import StatsView from "./components/StatsView";
 import Footer from "./components/Footer";
 
-const BUILTIN_FICHES = new Set(BUILTIN_QUESTIONS.map((q) => q.fiche));
-
 export default function App() {
-  const [importedQuestions, setImportedQuestions] = useLocalStorageState(
-    "fiches-cirrhose-imported-v1",
-    [],
-  );
-  const [progress, setProgress] = useLocalStorageState(
-    "fiches-cirrhose-progress-v1",
-    {},
-  );
-  const [activeFiche, setActiveFiche] = useLocalStorageState(
-    "fiches-cirrhose-filter-v1",
-    "all",
-  );
+  const [progress, setProgress] = useLocalStorageState("fiches-cirrhose-progress-v1", {});
+  const [activeFiche, setActiveFiche] = useLocalStorageState("fiches-cirrhose-filter-v1", "all");
   const [activeTab, setActiveTab] = useState("review");
   const [status, setStatus] = useState("");
 
-  const allQuestions = useMemo(
-    () => [...BUILTIN_QUESTIONS, ...importedQuestions],
-    [importedQuestions],
-  );
+  const [manifest, setManifest] = useState([]);
+  const [importedQuestions, setImportedQuestions] = useState([]);
+  const [fichesLoading, setFichesLoading] = useState(true);
+  const [fichesError, setFichesError] = useState(null);
+  const [refreshTick, setRefreshTick] = useState(0);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function load() {
+      setFichesLoading(true);
+      setFichesError(null);
+      try {
+        const list = await fetchFicheManifest();
+        const results = await Promise.all(
+          list.map(async (f) => {
+            const res = await fetch(f.url);
+            const text = await res.text();
+            return questionsFromCSV(text, f);
+          })
+        );
+        if (!cancelled) {
+          setManifest(list);
+          setImportedQuestions(results.flat());
+        }
+      } catch (e) {
+        if (!cancelled) setFichesError(e.message || "Chargement des fiches impossible.");
+      } finally {
+        if (!cancelled) setFichesLoading(false);
+      }
+    }
+
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [refreshTick]);
+
+  function refreshFiches() {
+    setRefreshTick((t) => t + 1);
+  }
+
+  const allQuestions = importedQuestions;
 
   const byId = useMemo(() => {
     const map = {};
@@ -82,37 +109,23 @@ export default function App() {
     setProgress((prev) => ({ ...prev, [id]: updatedCard }));
   }
 
-  function handleImportFiche(newQuestions) {
-    setImportedQuestions((prev) => [...prev, ...newQuestions]);
-  }
-
-  function handleRemoveFiche(ficheName) {
-    const idsToRemove = importedQuestions
-      .filter((q) => q.fiche === ficheName)
-      .map((q) => q.id);
-    setImportedQuestions((prev) => prev.filter((q) => q.fiche !== ficheName));
-    setProgress((prev) => {
-      const next = { ...prev };
-      idsToRemove.forEach((id) => delete next[id]);
-      return next;
-    });
-    if (activeFiche === ficheName) setActiveFiche("all");
-    flash(`Fiche « ${ficheName} » retirée.`);
-  }
+  const initialLoad = fichesLoading && manifest.length === 0 && importedQuestions.length === 0;
 
   return (
     <div className="app">
       <div className="app-inner">
         <header className="masthead">
           <div>
-            <span className="eyebrow">Outil de révision</span>
-            <h1>MercuroProf 🌸</h1>
+            <span className="eyebrow">Carnet de révision</span>
+            <h1>Fiches Cirrhose 🌸</h1>
           </div>
         </header>
 
         <TabNav active={activeTab} onChange={setActiveTab} />
 
-        {activeTab === "review" && (
+        {initialLoad && <p className="status-line">Chargement des fiches...</p>}
+
+        {!initialLoad && activeTab === "review" && (
           <ReviewView
             activeIds={activeIds}
             byId={byId}
@@ -124,16 +137,16 @@ export default function App() {
           />
         )}
 
-        {activeTab === "stats" && (
+        {!initialLoad && activeTab === "stats" && (
           <StatsView
             ids={ids}
             themeGroups={themeGroups}
             ficheGroups={ficheGroups}
+            manifest={manifest}
             progress={progress}
-            builtinFiches={BUILTIN_FICHES}
-            onImportFiche={handleImportFiche}
-            onRemoveFiche={handleRemoveFiche}
+            onFichesChanged={refreshFiches}
             flash={flash}
+            loadError={fichesError}
           />
         )}
 

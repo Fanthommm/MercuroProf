@@ -44,7 +44,17 @@ export default function ReviewView({
     setRevealed(false);
   }
 
-  if (!card) return null;
+  if (!card) {
+    return (
+      <section className="view">
+        <div className="flashcard">
+          <div className="question">
+            Aucune fiche disponible pour l'instant. Ajoute-en une depuis l'onglet Statistiques.
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="view">

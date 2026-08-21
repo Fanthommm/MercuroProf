@@ -1,22 +1,29 @@
 import { useRef, useState } from "react";
 import { computeStats, computeTotals } from "../lib/scheduler";
-import { parseCSV } from "../lib/csv";
+import { deleteFiche, getUploadSecret, questionsFromCSV, setUploadSecret, uploadFiche } from "../lib/fiches";
 import StatTiles from "./StatTiles";
 
 export default function StatsView({
   ids,
   themeGroups,
   ficheGroups,
+  manifest,
   progress,
-  builtinFiches,
-  onImportFiche,
-  onRemoveFiche,
-  flash
+  onFichesChanged,
+  flash,
+  loadError
 }) {
   const totals = computeTotals(ids, progress);
   const fileInputRef = useRef(null);
   const [pendingFile, setPendingFile] = useState(null);
   const [ficheName, setFicheName] = useState("");
+  const [secret, setSecret] = useState(getUploadSecret());
+  const [busy, setBusy] = useState(false);
+
+  function handleSecretChange(e) {
+    setSecret(e.target.value);
+    setUploadSecret(e.target.value);
+  }
 
   function handleFileChosen(e) {
     const file = e.target.files[0];
@@ -31,48 +38,47 @@ export default function StatsView({
     if (fileInputRef.current) fileInputRef.current.value = "";
   }
 
-  function confirmImport() {
+  async function confirmImport() {
     if (!pendingFile) return;
     const name = ficheName.trim();
     if (!name) {
       flash("Donne un nom à la fiche avant d'ajouter.");
       return;
     }
-    const reader = new FileReader();
-    reader.onload = () => {
-      try {
-        const rows = parseCSV(reader.result);
-        if (!rows.length) throw new Error("fichier vide");
-        const header = rows[0].map((h) => h.trim().toLowerCase());
-        const qIdx = header.indexOf("question");
-        const rIdx = header.indexOf("reponse") >= 0 ? header.indexOf("reponse") : header.indexOf("réponse");
-        const tIdx = header.indexOf("theme") >= 0 ? header.indexOf("theme") : header.indexOf("thème");
-        if (qIdx < 0 || rIdx < 0) throw new Error("colonnes manquantes");
 
-        const stamp = Date.now();
-        const added = [];
-        rows.slice(1).forEach((cols, i) => {
-          const question = (cols[qIdx] || "").trim();
-          const reponse = (cols[rIdx] || "").trim();
-          if (!question || !reponse) return;
-          const theme = tIdx >= 0 ? (cols[tIdx] || "").trim() : "";
-          added.push({
-            id: `imp${stamp}-${i}`,
-            fiche: name,
-            theme: theme || name,
-            question,
-            reponse
-          });
-        });
-        if (!added.length) throw new Error("aucune question valide");
-        onImportFiche(added);
-        flash(`${added.length} questions importées depuis « ${name} ».`);
-      } catch (e) {
-        flash("Fichier illisible ou mal formé (colonnes attendues : Theme, Question, Reponse).");
-      }
+    const text = await pendingFile.text();
+    const preview = questionsFromCSV(text, { pathname: "preview", name });
+    if (!preview.length) {
+      flash("Fichier illisible ou mal formé (colonnes attendues : Theme, Question, Reponse).");
+      return;
+    }
+
+    setBusy(true);
+    try {
+      await uploadFiche(name, text);
+      flash(`${preview.length} questions envoyées pour « ${name} ».`);
       cancelImport();
-    };
-    reader.readAsText(pendingFile);
+      onFichesChanged();
+    } catch (e) {
+      flash(e.message === "unauthorized" ? "Mot de passe incorrect." : "Envoi impossible.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleRemove(g) {
+    const entry = manifest.find((m) => m.name === g.fiche);
+    if (!entry) return;
+    setBusy(true);
+    try {
+      await deleteFiche(entry.pathname);
+      flash(`Fiche « ${g.fiche} » retirée.`);
+      onFichesChanged();
+    } catch (e) {
+      flash(e.message === "unauthorized" ? "Mot de passe incorrect." : "Suppression impossible.");
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
@@ -89,30 +95,44 @@ export default function StatsView({
       <div className="fiche-manager">
         <span className="section-label">Mes fiches</span>
 
+        {loadError && <p className="csv-hint">Fiches partagées indisponibles ({loadError}).</p>}
+
         <div className="fiche-list">
           {ficheGroups.map((g) => (
             <div className="fiche-row" key={g.fiche}>
               <span className="name">{g.fiche}</span>
               <span className="count">{g.ids.length} questions</span>
-              {!builtinFiches.has(g.fiche) && (
-                <button
-                  type="button"
-                  className="remove"
-                  title="Retirer cette fiche"
-                  onClick={() => onRemoveFiche(g.fiche)}
-                >
-                  ×
-                </button>
-              )}
+              <button
+                type="button"
+                className="remove"
+                title="Retirer cette fiche"
+                disabled={busy}
+                onClick={() => handleRemove(g)}
+              >
+                ×
+              </button>
             </div>
           ))}
         </div>
 
-        <button type="button" className="ghost-btn" onClick={() => fileInputRef.current?.click()}>
+        <input
+          type="text"
+          value={secret}
+          onChange={handleSecretChange}
+          placeholder="Mot de passe d'édition"
+        />
+
+        <button
+          type="button"
+          className="ghost-btn"
+          disabled={busy}
+          onClick={() => fileInputRef.current?.click()}
+        >
           + Importer une fiche (CSV)
         </button>
         <p className="csv-hint">
-          Colonnes attendues : <code>Theme</code>, <code>Question</code>, <code>Reponse</code>
+          Colonnes attendues : <code>Theme</code>, <code>Question</code>, <code>Reponse</code> — visible
+          sur tous les appareils une fois envoyée.
         </p>
         <input ref={fileInputRef} type="file" accept=".csv,text/csv" hidden onChange={handleFileChosen} />
 
@@ -126,10 +146,10 @@ export default function StatsView({
               maxLength={80}
             />
             <div className="import-actions">
-              <button type="button" className="ghost-btn primary" onClick={confirmImport}>
+              <button type="button" className="ghost-btn primary" disabled={busy} onClick={confirmImport}>
                 Ajouter
               </button>
-              <button type="button" className="ghost-btn" onClick={cancelImport}>
+              <button type="button" className="ghost-btn" disabled={busy} onClick={cancelImport}>
                 Annuler
               </button>
             </div>

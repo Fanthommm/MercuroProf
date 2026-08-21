@@ -12,3 +12,5 @@ csv_questions
 
 # Bric à brac
 items.html
+.vercel
+.env*
