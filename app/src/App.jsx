@@ -11,16 +11,22 @@ const BUILTIN_FICHES = new Set(BUILTIN_QUESTIONS.map((q) => q.fiche));
 export default function App() {
   const [importedQuestions, setImportedQuestions] = useLocalStorageState(
     "fiches-cirrhose-imported-v1",
-    []
+    [],
   );
-  const [progress, setProgress] = useLocalStorageState("fiches-cirrhose-progress-v1", {});
-  const [activeFiche, setActiveFiche] = useLocalStorageState("fiches-cirrhose-filter-v1", "all");
+  const [progress, setProgress] = useLocalStorageState(
+    "fiches-cirrhose-progress-v1",
+    {},
+  );
+  const [activeFiche, setActiveFiche] = useLocalStorageState(
+    "fiches-cirrhose-filter-v1",
+    "all",
+  );
   const [activeTab, setActiveTab] = useState("review");
   const [status, setStatus] = useState("");
 
   const allQuestions = useMemo(
     () => [...BUILTIN_QUESTIONS, ...importedQuestions],
-    [importedQuestions]
+    [importedQuestions],
   );
 
   const byId = useMemo(() => {
@@ -99,8 +105,8 @@ export default function App() {
       <div className="app-inner">
         <header className="masthead">
           <div>
-            <span className="eyebrow">Carnet de révision</span>
-            <h1>Fiches Cirrhose 🌸</h1>
+            <span className="eyebrow">Outil de révision</span>
+            <h1>MercuroProf 🌸</h1>
           </div>
         </header>
 
