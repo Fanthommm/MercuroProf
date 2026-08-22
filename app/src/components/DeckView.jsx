@@ -33,6 +33,11 @@ export default function DeckView({
 }) {
   const [selectedFiche, setSelectedFiche] = useState("all");
   const [expandedThemes, setExpandedThemes] = useState(() => new Set());
+  const [showWarnings, setShowWarnings] = useState(false);
+
+  const problemFiches = manifest.filter(
+    (m) => m.error || !ficheGroups.some((g) => g.fiche === m.name),
+  );
 
   function toggleTheme(theme) {
     setExpandedThemes((prev) => {
@@ -170,16 +175,24 @@ export default function DeckView({
           </p>
         )}
 
-        {manifest
-          .filter(
-            (m) => m.error || !ficheGroups.some((g) => g.fiche === m.name),
-          )
-          .map((m) => (
-            <p className="csv-hint" key={m.pathname}>
-              ⚠️ « {m.name} » ({m.pathname}) :{" "}
-              {m.error || "0 question reconnue dans ce CSV"}
-            </p>
-          ))}
+        {problemFiches.length > 0 && (
+          <>
+            <button
+              type="button"
+              className="ghost-btn"
+              onClick={() => setShowWarnings((v) => !v)}
+            >
+              ⚠️ {problemFiches.length} fiche(s) à vérifier {showWarnings ? "▾" : "▸"}
+            </button>
+            {showWarnings &&
+              problemFiches.map((m) => (
+                <p className="csv-hint" key={m.pathname}>
+                  « {m.name} » ({m.pathname}) :{" "}
+                  {m.error || "0 question reconnue dans ce CSV"}
+                </p>
+              ))}
+          </>
+        )}
 
         <div className="fiche-list">
           {ficheGroups.map((g) => (
