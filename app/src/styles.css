@@ -538,3 +538,74 @@ footer {
   padding: 1px 5px;
   border-radius: 4px;
 }
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 100;
+}
+
+.modal {
+  position: relative;
+  width: 100%;
+  max-width: 480px;
+  max-height: 85vh;
+  overflow-y: auto;
+  background: var(--paper-raised);
+  border-radius: 16px;
+  padding: 26px 22px;
+  box-shadow: 0 20px 60px -20px rgba(var(--shadow) / 0.5);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.modal-small {
+  max-width: 380px;
+  gap: 10px;
+}
+
+.modal-close {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  background: none;
+  border: none;
+  font-size: 1.3rem;
+  line-height: 1;
+  color: var(--ink-soft);
+  cursor: pointer;
+  padding: 4px 8px;
+}
+
+.modal-close:hover { color: var(--rose-deep); }
+
+.modal-lock {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: stretch;
+}
+
+.modal-lock input,
+.modal-body > input[type="text"],
+.modal-body > input[type="password"] {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 9px 12px;
+  font-family: "Figtree", sans-serif;
+  font-size: 0.85rem;
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}

@@ -18,6 +18,14 @@ export function setUploadSecret(value) {
   }
 }
 
+export async function verifySecret(secret) {
+  const res = await fetch("/api/verify", {
+    method: "POST",
+    headers: { "x-upload-secret": secret }
+  });
+  return res.ok;
+}
+
 export async function fetchFicheManifest() {
   const res = await fetch("/api/fiches");
   if (!res.ok) throw new Error("Liste des fiches indisponible.");
