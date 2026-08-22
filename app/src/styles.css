@@ -427,7 +427,19 @@ footer {
 .seg-learning { background: var(--amber); }
 .seg-new { background: var(--line); }
 
-.fiche-filter { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; }
+.fiche-filter-wrap { display: flex; flex-direction: column; gap: 8px; }
+
+.fiche-search {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 9px 12px;
+  font-family: "Figtree", sans-serif;
+  font-size: 0.85rem;
+  background: var(--paper-raised);
+  color: var(--ink);
+}
+
+.fiche-filter { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; align-items: center; }
 
 .filter-pill {
   flex: 0 0 auto;
