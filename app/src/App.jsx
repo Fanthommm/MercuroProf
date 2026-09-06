@@ -83,14 +83,20 @@ export default function App() {
   const ficheGroups = useMemo(() => {
     const order = [];
     const byFiche = {};
+    const matiereByFiche = {};
     allQuestions.forEach((q) => {
       if (!byFiche[q.fiche]) {
         byFiche[q.fiche] = [];
         order.push(q.fiche);
+        matiereByFiche[q.fiche] = q.matiere;
       }
       byFiche[q.fiche].push(q.id);
     });
-    return order.map((fiche) => ({ fiche, ids: byFiche[fiche] }));
+    return order.map((fiche) => ({
+      fiche,
+      matiere: matiereByFiche[fiche],
+      ids: byFiche[fiche]
+    }));
   }, [allQuestions]);
 
   const activeIds = useMemo(() => {

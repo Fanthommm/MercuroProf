@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import {
   deleteFiche,
   getUploadSecret,
@@ -7,6 +7,8 @@ import {
   uploadFiche,
   verifySecret
 } from "../lib/fiches";
+
+const DEFAULT_MATIERE = "Non classé";
 
 function diffSummary(oldCsv, newCsv, ficheMeta) {
   const oldQs = questionsFromCSV(oldCsv, ficheMeta).map((q) => q.question);
@@ -31,6 +33,14 @@ function downloadCsv(name, csv) {
   URL.revokeObjectURL(url);
 }
 
+function deriveNameFromFilename(filename) {
+  return filename
+    .replace(/\.[^.]+$/, "")
+    .replace(/_questions_revision$/i, "")
+    .replace(/[_-]+/g, " ")
+    .trim();
+}
+
 export default function FicheAdminModal({ manifest, ficheGroups, onClose, onFichesChanged, flash }) {
   const [secret, setSecretInput] = useState(getUploadSecret());
   const [unlocked, setUnlocked] = useState(false);
@@ -42,9 +52,27 @@ export default function FicheAdminModal({ manifest, ficheGroups, onClose, onFich
   const [pendingFile, setPendingFile] = useState(null);
   const [pendingText, setPendingText] = useState("");
   const [ficheName, setFicheName] = useState("");
+  const [matiere, setMatiere] = useState(DEFAULT_MATIERE);
+  const [bulkMatiere, setBulkMatiere] = useState(DEFAULT_MATIERE);
   const [busy, setBusy] = useState(false);
   const [bulkProgress, setBulkProgress] = useState(null);
   const [duplicateConfirm, setDuplicateConfirm] = useState(null);
+
+  const matiereGroups = useMemo(() => {
+    const order = [];
+    const byMatiere = {};
+    ficheGroups.forEach((g) => {
+      const m = g.matiere || DEFAULT_MATIERE;
+      if (!byMatiere[m]) {
+        byMatiere[m] = [];
+        order.push(m);
+      }
+      byMatiere[m].push(g);
+    });
+    return order.map((m) => ({ matiere: m, fiches: byMatiere[m] }));
+  }, [ficheGroups]);
+
+  const knownMatieres = matiereGroups.map((g) => g.matiere);
 
   async function handleUnlock() {
     setChecking(true);
@@ -54,6 +82,10 @@ export default function FicheAdminModal({ manifest, ficheGroups, onClose, onFich
       if (ok) {
         setUploadSecret(secret);
         setUnlocked(true);
+        if (knownMatieres.length) {
+          setMatiere(knownMatieres[0]);
+          setBulkMatiere(knownMatieres[0]);
+        }
       } else {
         setUnlockError("Mot de passe incorrect.");
       }
@@ -62,14 +94,6 @@ export default function FicheAdminModal({ manifest, ficheGroups, onClose, onFich
     } finally {
       setChecking(false);
     }
-  }
-
-  function deriveNameFromFilename(filename) {
-    return filename
-      .replace(/\.[^.]+$/, "")
-      .replace(/_questions_revision$/i, "")
-      .replace(/[_-]+/g, " ")
-      .trim();
   }
 
   async function handleFileChosen(e) {
@@ -89,12 +113,12 @@ export default function FicheAdminModal({ manifest, ficheGroups, onClose, onFich
     if (fileInputRef.current) fileInputRef.current.value = "";
   }
 
-  async function doUpload(name, text) {
+  async function doUpload(matiereValue, name, text) {
     setBusy(true);
     try {
-      const preview = questionsFromCSV(text, { pathname: "preview", name });
-      await uploadFiche(name, text);
-      flash(`${preview.length} questions envoyées pour « ${name} ».`);
+      const preview = questionsFromCSV(text, { pathname: "preview", matiere: matiereValue, name });
+      await uploadFiche(matiereValue, name, text);
+      flash(`${preview.length} questions envoyées pour « ${name} » (${matiereValue}).`);
       cancelImport();
       onFichesChanged();
     } catch (e) {
@@ -107,29 +131,33 @@ export default function FicheAdminModal({ manifest, ficheGroups, onClose, onFich
   async function confirmImport() {
     if (!pendingFile) return;
     const name = ficheName.trim();
+    const matiereValue = matiere.trim() || DEFAULT_MATIERE;
     if (!name) {
       flash("Donne un nom à la fiche avant d'ajouter.");
       return;
     }
 
-    const preview = questionsFromCSV(pendingText, { pathname: "preview", name });
+    const preview = questionsFromCSV(pendingText, { pathname: "preview", matiere: matiereValue, name });
     if (!preview.length) {
       flash("Fichier illisible ou mal formé (colonnes attendues : Theme, Question, Reponse).");
       return;
     }
 
-    const existing = manifest.find((m) => m.name === name);
+    const existing = manifest.find(
+      (m) => m.name === name && (m.matiere || DEFAULT_MATIERE) === matiereValue
+    );
     if (existing) {
-      setDuplicateConfirm({ name, oldCsv: existing.csv, newCsv: pendingText });
+      setDuplicateConfirm({ matiere: matiereValue, name, oldCsv: existing.csv, newCsv: pendingText });
       return;
     }
 
-    await doUpload(name, pendingText);
+    await doUpload(matiereValue, name, pendingText);
   }
 
   async function handleBulkFiles(e) {
     const files = Array.from(e.target.files || []);
     if (!files.length) return;
+    const matiereValue = bulkMatiere.trim() || DEFAULT_MATIERE;
 
     setBusy(true);
     let added = 0;
@@ -140,12 +168,12 @@ export default function FicheAdminModal({ manifest, ficheGroups, onClose, onFich
       try {
         const name = deriveNameFromFilename(file.name);
         const text = await file.text();
-        const preview = questionsFromCSV(text, { pathname: "preview", name });
+        const preview = questionsFromCSV(text, { pathname: "preview", matiere: matiereValue, name });
         if (!preview.length) {
           skipped++;
           continue;
         }
-        await uploadFiche(name, text);
+        await uploadFiche(matiereValue, name, text);
         added++;
       } catch (err) {
         skipped++;
@@ -154,12 +182,18 @@ export default function FicheAdminModal({ manifest, ficheGroups, onClose, onFich
     setBulkProgress(null);
     setBusy(false);
     if (bulkInputRef.current) bulkInputRef.current.value = "";
-    flash(skipped > 0 ? `${added} fiche(s) importée(s), ${skipped} ignorée(s).` : `${added} fiche(s) importée(s).`);
+    flash(
+      skipped > 0
+        ? `${added} fiche(s) importée(s) dans « ${matiereValue} », ${skipped} ignorée(s).`
+        : `${added} fiche(s) importée(s) dans « ${matiereValue} ».`
+    );
     onFichesChanged();
   }
 
   async function handleRemove(g) {
-    const entry = manifest.find((m) => m.name === g.fiche);
+    const entry = manifest.find(
+      (m) => m.name === g.fiche && (m.matiere || DEFAULT_MATIERE) === (g.matiere || DEFAULT_MATIERE)
+    );
     if (!entry) return;
     setBusy(true);
     try {
@@ -174,7 +208,9 @@ export default function FicheAdminModal({ manifest, ficheGroups, onClose, onFich
   }
 
   function handleDownload(g) {
-    const entry = manifest.find((m) => m.name === g.fiche);
+    const entry = manifest.find(
+      (m) => m.name === g.fiche && (m.matiere || DEFAULT_MATIERE) === (g.matiere || DEFAULT_MATIERE)
+    );
     if (!entry || !entry.csv) {
       flash("Contenu indisponible pour cette fiche.");
       return;
@@ -183,7 +219,11 @@ export default function FicheAdminModal({ manifest, ficheGroups, onClose, onFich
   }
 
   const summary = duplicateConfirm
-    ? diffSummary(duplicateConfirm.oldCsv, duplicateConfirm.newCsv, { pathname: "preview", name: duplicateConfirm.name })
+    ? diffSummary(duplicateConfirm.oldCsv, duplicateConfirm.newCsv, {
+        pathname: "preview",
+        matiere: duplicateConfirm.matiere,
+        name: duplicateConfirm.name
+      })
     : null;
 
   return (
@@ -214,32 +254,37 @@ export default function FicheAdminModal({ manifest, ficheGroups, onClose, onFich
           <div className="modal-body">
             <p className="section-label">Gestion des fiches</p>
 
-            <div className="fiche-list">
-              {ficheGroups.map((g) => (
-                <div className="fiche-row" key={g.fiche}>
-                  <span className="name">{g.fiche}</span>
-                  <span className="count">{g.ids.length} questions</span>
-                  <button
-                    type="button"
-                    className="remove"
-                    title="Télécharger le CSV"
-                    disabled={busy}
-                    onClick={() => handleDownload(g)}
-                  >
-                    ⇩
-                  </button>
-                  <button
-                    type="button"
-                    className="remove"
-                    title="Retirer cette fiche"
-                    disabled={busy}
-                    onClick={() => handleRemove(g)}
-                  >
-                    ×
-                  </button>
+            {matiereGroups.map((mg) => (
+              <div key={mg.matiere}>
+                <p className="section-label">📁 {mg.matiere}</p>
+                <div className="fiche-list">
+                  {mg.fiches.map((g) => (
+                    <div className="fiche-row" key={g.fiche}>
+                      <span className="name">{g.fiche}</span>
+                      <span className="count">{g.ids.length} questions</span>
+                      <button
+                        type="button"
+                        className="remove"
+                        title="Télécharger le CSV"
+                        disabled={busy}
+                        onClick={() => handleDownload(g)}
+                      >
+                        ⇩
+                      </button>
+                      <button
+                        type="button"
+                        className="remove"
+                        title="Retirer cette fiche"
+                        disabled={busy}
+                        onClick={() => handleRemove(g)}
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
+              </div>
+            ))}
 
             <div className="import-actions">
               <button type="button" className="ghost-btn" disabled={busy} onClick={() => fileInputRef.current?.click()}>
@@ -252,6 +297,20 @@ export default function FicheAdminModal({ manifest, ficheGroups, onClose, onFich
             <p className="csv-hint">
               Colonnes attendues : <code>Theme</code>, <code>Question</code>, <code>Reponse</code>.
             </p>
+
+            <input
+              type="text"
+              value={bulkMatiere}
+              onChange={(e) => setBulkMatiere(e.target.value)}
+              placeholder="Matière pour l'import en lot"
+              list="matiere-options"
+            />
+            <datalist id="matiere-options">
+              {knownMatieres.map((m) => (
+                <option key={m} value={m} />
+              ))}
+            </datalist>
+
             {bulkProgress && (
               <p className="csv-hint">
                 Import en cours : {bulkProgress.current}/{bulkProgress.total} ({bulkProgress.name})
@@ -277,6 +336,14 @@ export default function FicheAdminModal({ manifest, ficheGroups, onClose, onFich
                   placeholder="Nom de la fiche"
                   maxLength={80}
                 />
+                <input
+                  type="text"
+                  value={matiere}
+                  onChange={(e) => setMatiere(e.target.value)}
+                  placeholder="Matière (ex: Gastroenterologie)"
+                  maxLength={60}
+                  list="matiere-options"
+                />
                 <div className="import-actions">
                   <button type="button" className="ghost-btn primary" disabled={busy} onClick={confirmImport}>
                     Ajouter
@@ -292,7 +359,8 @@ export default function FicheAdminModal({ manifest, ficheGroups, onClose, onFich
               <div className="modal-overlay" onClick={() => setDuplicateConfirm(null)}>
                 <div className="modal modal-small" onClick={(e) => e.stopPropagation()}>
                   <p>
-                    Cette fiche existe déjà : « {duplicateConfirm.name} ». Voulez-vous la remplacer ?
+                    Cette fiche existe déjà : « {duplicateConfirm.name} » ({duplicateConfirm.matiere}). Voulez-vous la
+                    remplacer ?
                   </p>
                   {summary && (
                     <p className="csv-hint">
@@ -305,7 +373,7 @@ export default function FicheAdminModal({ manifest, ficheGroups, onClose, onFich
                       type="button"
                       className="ghost-btn primary"
                       disabled={busy}
-                      onClick={() => doUpload(duplicateConfirm.name, duplicateConfirm.newCsv)}
+                      onClick={() => doUpload(duplicateConfirm.matiere, duplicateConfirm.name, duplicateConfirm.newCsv)}
                     >
                       Oui, remplacer
                     </button>

@@ -4,6 +4,7 @@ import { dirname, join } from "path";
 import { fileURLToPath } from "url";
 
 const PREFIX = "fiches/";
+const DEFAULT_MATIERE = "Non classé";
 const IS_LOCAL_DEV = process.env.VERCEL_ENV === "development";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -16,31 +17,65 @@ function isAuthorized(req) {
   return req.headers["x-upload-secret"] === secret;
 }
 
-function ficheNameFromPathname(pathname) {
-  return pathname.slice(PREFIX.length).replace(/\.csv$/, "");
+function sanitizePart(value) {
+  return value.trim().replace(/[\\/]/g, "-");
 }
 
-function sanitizeFicheName(name) {
-  return name.trim().replace(/\//g, "-");
+function nameFromFilename(filename) {
+  return filename
+    .replace(/\.csv$/i, "")
+    .replace(/_questions_revision$/i, "")
+    .replace(/[_-]+/g, " ")
+    .trim();
+}
+
+// pathname is "<matiere>/<name>.csv" (new) or "<name>.csv" (legacy, no matiere folder)
+function parsePathname(pathname) {
+  const rest = pathname.slice(PREFIX.length);
+  const slash = rest.indexOf("/");
+  if (slash === -1) {
+    return { matiere: DEFAULT_MATIERE, name: rest.replace(/\.csv$/i, "") };
+  }
+  return {
+    matiere: rest.slice(0, slash),
+    name: rest.slice(slash + 1).replace(/\.csv$/i, "")
+  };
 }
 
 function listLocalFiches() {
-  const files = readdirSync(LOCAL_CSV_DIR).filter((f) => f.toLowerCase().endsWith(".csv"));
-  return files.map((filename) => {
-    const csv = readFileSync(join(LOCAL_CSV_DIR, filename), "utf-8");
-    const name = filename
-      .replace(/\.csv$/i, "")
-      .replace(/_questions_revision$/i, "")
-      .replace(/[_-]+/g, " ")
-      .trim();
-    return {
-      pathname: `${PREFIX}${filename}`,
-      name,
-      csv,
-      uploadedAt: null,
-      size: csv.length
-    };
-  });
+  const entries = readdirSync(LOCAL_CSV_DIR, { withFileTypes: true });
+  const out = [];
+
+  for (const entry of entries) {
+    if (entry.isDirectory()) {
+      const matiere = entry.name;
+      const dirPath = join(LOCAL_CSV_DIR, entry.name);
+      const files = readdirSync(dirPath).filter((f) => f.toLowerCase().endsWith(".csv"));
+      for (const filename of files) {
+        const csv = readFileSync(join(dirPath, filename), "utf-8");
+        out.push({
+          pathname: `${PREFIX}${matiere}/${filename}`,
+          matiere,
+          name: nameFromFilename(filename),
+          csv,
+          uploadedAt: null,
+          size: csv.length
+        });
+      }
+    } else if (entry.name.toLowerCase().endsWith(".csv")) {
+      const csv = readFileSync(join(LOCAL_CSV_DIR, entry.name), "utf-8");
+      out.push({
+        pathname: `${PREFIX}${entry.name}`,
+        matiere: DEFAULT_MATIERE,
+        name: nameFromFilename(entry.name),
+        csv,
+        uploadedAt: null,
+        size: csv.length
+      });
+    }
+  }
+
+  return out;
 }
 
 export default async function handler(req, res) {
@@ -66,13 +101,15 @@ export default async function handler(req, res) {
 
     const fiches = await Promise.all(
       blobs.map(async (b) => {
+        const { matiere, name } = parsePathname(b.pathname);
         try {
           const result = await get(b.url, { access: "private" });
           const csv = result ? await new Response(result.stream).text() : "";
           return {
             pathname: b.pathname,
             url: b.url,
-            name: ficheNameFromPathname(b.pathname),
+            matiere,
+            name,
             uploadedAt: b.uploadedAt,
             size: b.size,
             csv
@@ -82,7 +119,8 @@ export default async function handler(req, res) {
           return {
             pathname: b.pathname,
             url: b.url,
-            name: ficheNameFromPathname(b.pathname),
+            matiere,
+            name,
             uploadedAt: b.uploadedAt,
             size: b.size,
             csv: "",
@@ -106,12 +144,13 @@ export default async function handler(req, res) {
       res.status(401).json({ error: "unauthorized" });
       return;
     }
-    const { name, csv } = req.body || {};
+    const { matiere, name, csv } = req.body || {};
     if (!name || !csv) {
       res.status(400).json({ error: "name et csv requis" });
       return;
     }
-    const pathname = `${PREFIX}${sanitizeFicheName(name)}.csv`;
+    const matiereSlug = sanitizePart(matiere || DEFAULT_MATIERE);
+    const pathname = `${PREFIX}${matiereSlug}/${sanitizePart(name)}.csv`;
     const blob = await put(pathname, csv, {
       access: "private",
       addRandomSuffix: false,

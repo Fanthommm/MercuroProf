@@ -1,16 +1,30 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 const SEARCH_THRESHOLD = 6;
+const DEFAULT_MATIERE = "Non classé";
 
 export default function FicheFilter({ ficheGroups, active, onChange }) {
   const [query, setQuery] = useState("");
+  const [matiereFilter, setMatiereFilter] = useState("all");
+
+  const matieres = useMemo(() => {
+    const seen = [];
+    ficheGroups.forEach((g) => {
+      const m = g.matiere || DEFAULT_MATIERE;
+      if (!seen.includes(m)) seen.push(m);
+    });
+    return seen;
+  }, [ficheGroups]);
 
   if (ficheGroups.length <= 1) return null;
 
   const normalizedQuery = query.trim().toLowerCase();
-  const visibleFiches = normalizedQuery
-    ? ficheGroups.filter((g) => g.fiche.toLowerCase().includes(normalizedQuery))
-    : ficheGroups;
+  const visibleFiches = ficheGroups.filter((g) => {
+    const matiere = g.matiere || DEFAULT_MATIERE;
+    if (matiereFilter !== "all" && matiere !== matiereFilter) return false;
+    if (normalizedQuery && !g.fiche.toLowerCase().includes(normalizedQuery)) return false;
+    return true;
+  });
 
   const options = [
     { fiche: "all", label: "Toutes les fiches" },
@@ -19,6 +33,28 @@ export default function FicheFilter({ ficheGroups, active, onChange }) {
 
   return (
     <div className="fiche-filter-wrap">
+      {matieres.length > 1 && (
+        <div className="fiche-filter">
+          <button
+            type="button"
+            className={`filter-pill matiere-pill${matiereFilter === "all" ? " active" : ""}`}
+            onClick={() => setMatiereFilter("all")}
+          >
+            Toutes les matières
+          </button>
+          {matieres.map((m) => (
+            <button
+              key={m}
+              type="button"
+              className={`filter-pill matiere-pill${matiereFilter === m ? " active" : ""}`}
+              onClick={() => setMatiereFilter(m)}
+            >
+              📁 {m}
+            </button>
+          ))}
+        </div>
+      )}
+
       {ficheGroups.length > SEARCH_THRESHOLD && (
         <input
           type="text"
@@ -28,6 +64,7 @@ export default function FicheFilter({ ficheGroups, active, onChange }) {
           placeholder="Rechercher une fiche..."
         />
       )}
+
       <div className="fiche-filter">
         {options.map((opt) => (
           <button
@@ -39,7 +76,7 @@ export default function FicheFilter({ ficheGroups, active, onChange }) {
             {opt.label}
           </button>
         ))}
-        {normalizedQuery && visibleFiches.length === 0 && (
+        {(normalizedQuery || matiereFilter !== "all") && visibleFiches.length === 0 && (
           <span className="csv-hint">Aucune fiche ne correspond.</span>
         )}
       </div>

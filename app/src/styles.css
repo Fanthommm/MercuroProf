@@ -457,6 +457,9 @@ footer {
 
 .filter-pill.active { background: var(--rose); border-color: var(--rose); color: #fff; }
 
+.matiere-pill { border-style: dashed; font-weight: 700; }
+.matiere-pill.active { border-style: solid; }
+
 .section-label {
   font-size: 0.72rem;
   letter-spacing: 0.06em;

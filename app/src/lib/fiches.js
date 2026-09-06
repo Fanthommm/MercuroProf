@@ -33,14 +33,14 @@ export async function fetchFicheManifest() {
   return data.fiches;
 }
 
-export async function uploadFiche(name, csvText) {
+export async function uploadFiche(matiere, name, csvText) {
   const res = await fetch("/api/fiches", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       "x-upload-secret": getUploadSecret()
     },
-    body: JSON.stringify({ name, csv: csvText })
+    body: JSON.stringify({ matiere, name, csv: csvText })
   });
   if (res.status === 401) throw new Error("unauthorized");
   if (!res.ok) {
@@ -81,6 +81,7 @@ export function questionsFromCSV(csvText, fiche) {
     const theme = tIdx >= 0 ? (cols[tIdx] || "").trim() : "";
     out.push({
       id: `blob:${fiche.pathname}:${i}`,
+      matiere: fiche.matiere || "Non classé",
       fiche: fiche.name,
       theme: theme || fiche.name,
       question,
