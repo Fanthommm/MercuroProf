@@ -1,9 +1,13 @@
 import { useMemo, useState } from "react";
 
 const DEFAULT_MATIERE = "Gastroenterologie";
+const MATIERE_SEARCH_THRESHOLD = 6;
+const FICHE_SEARCH_THRESHOLD = 6;
 
 export default function ReviewSelector({ ficheGroups, onSelect }) {
   const [mode, setMode] = useState(null);
+  const [matiereQuery, setMatiereQuery] = useState("");
+  const [ficheQuery, setFicheQuery] = useState("");
   const [ficheMatiere, setFicheMatiere] = useState(null);
   const [checkedFiches, setCheckedFiches] = useState(() => new Set());
 
@@ -18,12 +22,25 @@ export default function ReviewSelector({ ficheGroups, onSelect }) {
       }
       byMatiere[m].push(g);
     });
-    return order.map((m) => ({ matiere: m, fiches: byMatiere[m] }));
+    return order
+      .map((m) => ({
+        matiere: m,
+        fiches: [...byMatiere[m]].sort((a, b) => a.fiche.localeCompare(b.fiche, "fr"))
+      }))
+      .sort((a, b) => a.matiere.localeCompare(b.matiere, "fr"));
   }, [ficheGroups]);
 
   const totalCards = ficheGroups.reduce((sum, g) => sum + g.ids.length, 0);
-  const ficheMatiereGroup = matiereGroups.find(
-    (g) => g.matiere === ficheMatiere,
+
+  const normalizedMatiereQuery = matiereQuery.trim().toLowerCase();
+  const visibleMatiereGroups = matiereGroups.filter(
+    (g) => !normalizedMatiereQuery || g.matiere.toLowerCase().includes(normalizedMatiereQuery)
+  );
+
+  const ficheMatiereGroup = matiereGroups.find((g) => g.matiere === ficheMatiere);
+  const normalizedFicheQuery = ficheQuery.trim().toLowerCase();
+  const visibleFiches = (ficheMatiereGroup?.fiches || []).filter(
+    (g) => !normalizedFicheQuery || g.fiche.toLowerCase().includes(normalizedFicheQuery)
   );
 
   function toggleMode(next) {
@@ -48,6 +65,37 @@ export default function ReviewSelector({ ficheGroups, onSelect }) {
     });
   }
 
+  function renderMatiereList(onPick) {
+    return (
+      <>
+        {matiereGroups.length > MATIERE_SEARCH_THRESHOLD && (
+          <input
+            type="text"
+            className="fiche-search"
+            value={matiereQuery}
+            onChange={(e) => setMatiereQuery(e.target.value)}
+            placeholder="Rechercher une matière..."
+          />
+        )}
+        <div className="fiche-filter">
+          {visibleMatiereGroups.map((g) => (
+            <button
+              key={g.matiere}
+              type="button"
+              className={`filter-pill matiere-pill${ficheMatiere === g.matiere ? " active" : ""}`}
+              onClick={() => onPick(g.matiere)}
+            >
+              📁 {g.matiere} ({g.fiches.reduce((s, f) => s + f.ids.length, 0)})
+            </button>
+          ))}
+          {normalizedMatiereQuery && visibleMatiereGroups.length === 0 && (
+            <span className="csv-hint">Aucune matière ne correspond.</span>
+          )}
+        </div>
+      </>
+    );
+  }
+
   return (
     <div className="review-selector">
       <button
@@ -70,23 +118,8 @@ export default function ReviewSelector({ ficheGroups, onSelect }) {
           <span className="selector-title">📚 Réviser une matière</span>
           <span className="chevron">{mode === "matiere" ? "▾" : "▸"}</span>
         </button>
-        {mode === "matiere" && (
-          <div className="fiche-filter">
-            {matiereGroups.map((g) => (
-              <button
-                key={g.matiere}
-                type="button"
-                className="filter-pill matiere-pill"
-                onClick={() =>
-                  onSelect({ mode: "matiere", matiere: g.matiere })
-                }
-              >
-                📁 {g.matiere} ({g.fiches.reduce((s, f) => s + f.ids.length, 0)}
-                )
-              </button>
-            ))}
-          </div>
-        )}
+        {mode === "matiere" &&
+          renderMatiereList((matiere) => onSelect({ mode: "matiere", matiere }))}
       </div>
 
       <div className="selector-tile">
@@ -104,27 +137,26 @@ export default function ReviewSelector({ ficheGroups, onSelect }) {
         {mode === "fiche" && (
           <div className="selector-fiche-picker">
             <p className="csv-hint">1. Choisis la matière</p>
-            <div className="fiche-filter">
-              {matiereGroups.map((g) => (
-                <button
-                  key={g.matiere}
-                  type="button"
-                  className={`filter-pill matiere-pill${ficheMatiere === g.matiere ? " active" : ""}`}
-                  onClick={() => {
-                    setFicheMatiere(g.matiere);
-                    setCheckedFiches(new Set());
-                  }}
-                >
-                  📁 {g.matiere}
-                </button>
-              ))}
-            </div>
+            {renderMatiereList((matiere) => {
+              setFicheMatiere(matiere);
+              setCheckedFiches(new Set());
+              setFicheQuery("");
+            })}
 
             {ficheMatiereGroup && (
               <>
                 <p className="csv-hint">2. Choisis une ou plusieurs fiches</p>
+                {ficheMatiereGroup.fiches.length > FICHE_SEARCH_THRESHOLD && (
+                  <input
+                    type="text"
+                    className="fiche-search"
+                    value={ficheQuery}
+                    onChange={(e) => setFicheQuery(e.target.value)}
+                    placeholder="Rechercher une fiche..."
+                  />
+                )}
                 <div className="fiche-checklist">
-                  {ficheMatiereGroup.fiches.map((f) => (
+                  {visibleFiches.map((f) => (
                     <label className="fiche-check-row" key={f.fiche}>
                       <input
                         type="checkbox"
@@ -135,6 +167,9 @@ export default function ReviewSelector({ ficheGroups, onSelect }) {
                       <span className="count">{f.ids.length} questions</span>
                     </label>
                   ))}
+                  {normalizedFicheQuery && visibleFiches.length === 0 && (
+                    <span className="csv-hint">Aucune fiche ne correspond.</span>
+                  )}
                 </div>
                 <button
                   type="button"

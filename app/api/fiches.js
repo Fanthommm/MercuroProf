@@ -80,56 +80,49 @@ function listLocalFiches() {
 
 export default async function handler(req, res) {
   if (req.method === "GET") {
-    if (IS_LOCAL_DEV) {
-      try {
-        res.status(200).json({ fiches: listLocalFiches(), source: "local" });
-      } catch (e) {
-        console.error("local csv fallback failed:", e);
-        res.status(500).json({ error: `lecture locale échouée : ${e.message}` });
-      }
-      return;
-    }
-
-    let blobs;
     try {
-      ({ blobs } = await list({ prefix: PREFIX }));
+      const { blobs } = await list({ prefix: PREFIX });
+      const fiches = await Promise.all(
+        blobs.map(async (b) => {
+          const { matiere, name } = parsePathname(b.pathname);
+          try {
+            const result = await get(b.url, { access: "private" });
+            const csv = result ? await new Response(result.stream).text() : "";
+            return {
+              pathname: b.pathname,
+              url: b.url,
+              matiere,
+              name,
+              uploadedAt: b.uploadedAt,
+              size: b.size,
+              csv
+            };
+          } catch (e) {
+            console.error(`get() failed for ${b.pathname}:`, e);
+            return {
+              pathname: b.pathname,
+              url: b.url,
+              matiere,
+              name,
+              uploadedAt: b.uploadedAt,
+              size: b.size,
+              csv: "",
+              error: e.message
+            };
+          }
+        })
+      );
+      res.status(200).json({ fiches, source: "blob" });
     } catch (e) {
-      console.error("list() failed:", e);
-      res.status(500).json({ error: `list failed: ${e.message}` });
-      return;
+      console.error("Blob list() failed, falling back to local csv_questions/:", e);
+      try {
+        res.status(200).json({ fiches: listLocalFiches(), source: "local-fallback" });
+      } catch (fallbackError) {
+        res.status(500).json({
+          error: `Blob indisponible (${e.message}) et lecture locale impossible (${fallbackError.message})`
+        });
+      }
     }
-
-    const fiches = await Promise.all(
-      blobs.map(async (b) => {
-        const { matiere, name } = parsePathname(b.pathname);
-        try {
-          const result = await get(b.url, { access: "private" });
-          const csv = result ? await new Response(result.stream).text() : "";
-          return {
-            pathname: b.pathname,
-            url: b.url,
-            matiere,
-            name,
-            uploadedAt: b.uploadedAt,
-            size: b.size,
-            csv
-          };
-        } catch (e) {
-          console.error(`get() failed for ${b.pathname}:`, e);
-          return {
-            pathname: b.pathname,
-            url: b.url,
-            matiere,
-            name,
-            uploadedAt: b.uploadedAt,
-            size: b.size,
-            csv: "",
-            error: e.message
-          };
-        }
-      })
-    );
-    res.status(200).json({ fiches });
     return;
   }
 
