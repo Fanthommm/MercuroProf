@@ -1,5 +1,13 @@
+function detectDelimiter(text) {
+  const firstLine = text.split(/\r?\n/, 1)[0] || "";
+  const commaCount = (firstLine.match(/,/g) || []).length;
+  const semicolonCount = (firstLine.match(/;/g) || []).length;
+  return semicolonCount > commaCount ? ";" : ",";
+}
+
 export function parseCSV(text) {
   text = text.replace(/^﻿/, "");
+  const delimiter = detectDelimiter(text);
   const rows = [];
   let row = [];
   let field = "";
@@ -20,7 +28,7 @@ export function parseCSV(text) {
       }
     } else if (c === '"') {
       inQuotes = true;
-    } else if (c === ",") {
+    } else if (c === delimiter) {
       row.push(field);
       field = "";
     } else if (c === "\r") {
