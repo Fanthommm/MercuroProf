@@ -173,7 +173,7 @@ export default function ReviewSelector({ ficheGroups, onSelect }) {
                 </div>
                 <button
                   type="button"
-                  className="ghost-btn primary"
+                  className="ghost-btn primary selector-confirm-btn"
                   disabled={!checkedFiches.size}
                   onClick={startFicheReview}
                 >

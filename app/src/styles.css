@@ -539,6 +539,14 @@ footer {
 .ghost-btn.primary { background: var(--rose); border-color: var(--rose); color: #fff; }
 .ghost-btn.primary:hover { background: var(--rose-deep); border-color: var(--rose-deep); color: #fff; }
 
+.ghost-btn:disabled,
+.ghost-btn:disabled:hover {
+  background: var(--line);
+  border-color: var(--line);
+  color: var(--ink-soft);
+  cursor: not-allowed;
+}
+
 .import-confirm { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 
 .import-confirm input[type="text"] {
@@ -722,6 +730,17 @@ footer {
   display: flex;
   flex-direction: column;
   gap: 6px;
+  max-height: 38vh;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+.selector-confirm-btn {
+  position: sticky;
+  bottom: 0;
+  width: 100%;
+  margin-top: 4px;
+  box-shadow: 0 -8px 12px -8px rgba(var(--shadow) / 0.35);
 }
 
 .fiche-check-row {
