@@ -4,7 +4,7 @@ import { dirname, join } from "path";
 import { fileURLToPath } from "url";
 
 const PREFIX = "fiches/";
-const DEFAULT_MATIERE = "Non classé";
+const DEFAULT_MATIERE = "Gastroenterologie";
 const IS_LOCAL_DEV = process.env.VERCEL_ENV === "development";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));

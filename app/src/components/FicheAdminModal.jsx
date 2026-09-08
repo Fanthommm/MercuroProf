@@ -8,7 +8,7 @@ import {
   verifySecret
 } from "../lib/fiches";
 
-const DEFAULT_MATIERE = "Non classé";
+const DEFAULT_MATIERE = "Gastroenterologie";
 
 function diffSummary(oldCsv, newCsv, ficheMeta) {
   const oldQs = questionsFromCSV(oldCsv, ficheMeta).map((q) => q.question);
@@ -256,7 +256,10 @@ export default function FicheAdminModal({ manifest, ficheGroups, onClose, onFich
 
             {matiereGroups.map((mg) => (
               <div key={mg.matiere}>
-                <p className="section-label">📁 {mg.matiere}</p>
+                <div className="matiere-header">
+                  <span>📁 {mg.matiere}</span>
+                  <span className="count">{mg.fiches.length} fiche(s)</span>
+                </div>
                 <div className="fiche-list">
                   {mg.fiches.map((g) => (
                     <div className="fiche-row" key={g.fiche}>

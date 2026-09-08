@@ -81,7 +81,7 @@ export function questionsFromCSV(csvText, fiche) {
     const theme = tIdx >= 0 ? (cols[tIdx] || "").trim() : "";
     out.push({
       id: `blob:${fiche.pathname}:${i}`,
-      matiere: fiche.matiere || "Non classé",
+      matiere: fiche.matiere || "Gastroenterologie",
       fiche: fiche.name,
       theme: theme || fiche.name,
       question,

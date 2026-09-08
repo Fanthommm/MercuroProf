@@ -1,19 +1,24 @@
 import { useMemo, useState } from "react";
 
 const SEARCH_THRESHOLD = 6;
-const DEFAULT_MATIERE = "Non classé";
+const DEFAULT_MATIERE = "Gastroenterologie";
 
 export default function FicheFilter({ ficheGroups, active, onChange }) {
   const [query, setQuery] = useState("");
   const [matiereFilter, setMatiereFilter] = useState("all");
 
   const matieres = useMemo(() => {
-    const seen = [];
+    const order = [];
+    const counts = {};
     ficheGroups.forEach((g) => {
       const m = g.matiere || DEFAULT_MATIERE;
-      if (!seen.includes(m)) seen.push(m);
+      if (!counts[m]) {
+        counts[m] = 0;
+        order.push(m);
+      }
+      counts[m] += 1;
     });
-    return seen;
+    return order.map((m) => ({ matiere: m, count: counts[m] }));
   }, [ficheGroups]);
 
   if (ficheGroups.length <= 1) return null;
@@ -33,8 +38,9 @@ export default function FicheFilter({ ficheGroups, active, onChange }) {
 
   return (
     <div className="fiche-filter-wrap">
-      {matieres.length > 1 && (
-        <div className="fiche-filter">
+      <span className="section-label">Matières</span>
+      <div className="fiche-filter">
+        {matieres.length > 1 && (
           <button
             type="button"
             className={`filter-pill matiere-pill${matiereFilter === "all" ? " active" : ""}`}
@@ -42,18 +48,18 @@ export default function FicheFilter({ ficheGroups, active, onChange }) {
           >
             Toutes les matières
           </button>
-          {matieres.map((m) => (
-            <button
-              key={m}
-              type="button"
-              className={`filter-pill matiere-pill${matiereFilter === m ? " active" : ""}`}
-              onClick={() => setMatiereFilter(m)}
-            >
-              📁 {m}
-            </button>
-          ))}
-        </div>
-      )}
+        )}
+        {matieres.map((m) => (
+          <button
+            key={m.matiere}
+            type="button"
+            className={`filter-pill matiere-pill${matiereFilter === m.matiere ? " active" : ""}`}
+            onClick={() => setMatiereFilter(matiereFilter === m.matiere ? "all" : m.matiere)}
+          >
+            📁 {m.matiere} ({m.count})
+          </button>
+        ))}
+      </div>
 
       {ficheGroups.length > SEARCH_THRESHOLD && (
         <input
