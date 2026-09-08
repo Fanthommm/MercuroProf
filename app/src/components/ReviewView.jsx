@@ -1,27 +1,71 @@
 import { useEffect, useState } from "react";
-import { RATINGS, computeStats, formatDelay, gradeCard, newCard, pickNext } from "../lib/scheduler";
-import FicheFilter from "./FicheFilter";
+import {
+  RATINGS,
+  computeStats,
+  formatDelay,
+  gradeCard,
+  newCard,
+  pickNext,
+} from "../lib/scheduler";
 import StatTiles from "./StatTiles";
-import GradeRow from "./GradeRow";
+import Flashcard from "./Flashcard";
+import ReviewSelector from "./ReviewSelector";
+
+const DEFAULT_MATIERE = "Gastroenterologie";
+
+function computeActiveIds(selection, ids, ficheGroups) {
+  if (!selection || selection.mode === "all") return ids;
+  if (selection.mode === "matiere") {
+    return ficheGroups
+      .filter((g) => (g.matiere || DEFAULT_MATIERE) === selection.matiere)
+      .flatMap((g) => g.ids);
+  }
+  if (selection.mode === "fiches") {
+    const set = new Set(selection.fiches);
+    return ficheGroups.filter((g) => set.has(g.fiche)).flatMap((g) => g.ids);
+  }
+  return ids;
+}
+
+function describeSelection(selection) {
+  if (!selection || selection.mode === "all") return "Toutes les cartes";
+  if (selection.mode === "matiere") return `📁 ${selection.matiere}`;
+  if (selection.mode === "fiches") {
+    return selection.fiches.length > 1
+      ? `${selection.fiches.length} fiches sélectionnées`
+      : selection.fiches[0];
+  }
+  return "";
+}
 
 export default function ReviewView({
-  activeIds,
+  ids,
   byId,
   progress,
   onGrade,
   ficheGroups,
-  activeFiche,
-  onFicheChange
+  selection,
+  onSelectionChange,
 }) {
+  const activeIds = computeActiveIds(selection, ids, ficheGroups);
+
   const [currentId, setCurrentId] = useState(() => pickNext(activeIds, progress));
   const [revealed, setRevealed] = useState(false);
 
   useEffect(() => {
     setCurrentId(pickNext(activeIds, progress));
     setRevealed(false);
-    // Only re-pick when the filter itself changes; grading re-picks explicitly.
+    // Only re-pick when the selection itself changes; grading re-picks explicitly.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeFiche]);
+  }, [selection]);
+
+  if (!selection) {
+    return (
+      <section className="view">
+        <ReviewSelector ficheGroups={ficheGroups} onSelect={onSelectionChange} />
+      </section>
+    );
+  }
 
   const card = byId[currentId];
   const stats = computeStats(activeIds, progress);
@@ -44,21 +88,18 @@ export default function ReviewView({
     setRevealed(false);
   }
 
-  if (!card) {
-    return (
-      <section className="view">
-        <div className="flashcard">
-          <div className="question">
-            Aucune fiche disponible pour l'instant. Ajoute-en une depuis l'onglet Statistiques.
-          </div>
-        </div>
-      </section>
-    );
+  function handleAnswerClick() {
+    setRevealed(true);
   }
 
   return (
     <section className="view">
-      <FicheFilter ficheGroups={ficheGroups} active={activeFiche} onChange={onFicheChange} />
+      <div className="selection-bar">
+        <span className="selection-label">{describeSelection(selection)}</span>
+        <button type="button" className="ghost-btn" onClick={() => onSelectionChange(null)}>
+          ← Changer
+        </button>
+      </div>
 
       <StatTiles
         className="stats"
@@ -66,29 +107,17 @@ export default function ReviewView({
           [stats.neu, "Nouvelles"],
           [stats.learning, "En cours"],
           [stats.dueNow, "À revoir"],
-          [stats.ahead, "Acquises"]
+          [stats.ahead, "Acquises"],
         ]}
       />
 
-      <div className="flashcard">
-        <span className="theme-tab">{card.theme}</span>
-        <div className="question">{card.question}</div>
-
-        <div className={`answer-panel${revealed ? " shown" : ""}`}>
-          <div className="answer-fold">
-            <div className="answer-label">Réponse</div>
-            <div className="answer-text">{card.reponse}</div>
-          </div>
-        </div>
-
-        {!revealed && (
-          <button type="button" className="reveal-btn" onClick={() => setRevealed(true)}>
-            Voir la réponse
-          </button>
-        )}
-
-        {revealed && <GradeRow etas={etas} onGrade={handleGrade} />}
-      </div>
+      <Flashcard
+        card={card}
+        revealed={revealed}
+        etas={etas}
+        onGrade={handleGrade}
+        onReveal={handleAnswerClick}
+      />
     </section>
   );
 }

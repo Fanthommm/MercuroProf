@@ -11,9 +11,9 @@ export default function App() {
     "fiches-cirrhose-progress-v1",
     {},
   );
-  const [activeFiche, setActiveFiche] = useLocalStorageState(
-    "fiches-cirrhose-filter-v1",
-    "all",
+  const [selection, setSelection] = useLocalStorageState(
+    "fiches-cirrhose-selection-v1",
+    null,
   );
   const [activeTab, setActiveTab] = useState("review");
   const [status, setStatus] = useState("");
@@ -99,12 +99,6 @@ export default function App() {
     }));
   }, [allQuestions]);
 
-  const activeIds = useMemo(() => {
-    if (activeFiche === "all") return ids;
-    const g = ficheGroups.find((x) => x.fiche === activeFiche);
-    return g ? g.ids : ids;
-  }, [activeFiche, ficheGroups, ids]);
-
   function flash(msg) {
     setStatus(msg);
     setTimeout(() => {
@@ -135,13 +129,13 @@ export default function App() {
 
         {!initialLoad && activeTab === "review" && (
           <ReviewView
-            activeIds={activeIds}
+            ids={ids}
             byId={byId}
             progress={progress}
             onGrade={handleGrade}
             ficheGroups={ficheGroups}
-            activeFiche={activeFiche}
-            onFicheChange={setActiveFiche}
+            selection={selection}
+            onSelectionChange={setSelection}
           />
         )}
 
