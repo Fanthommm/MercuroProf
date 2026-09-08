@@ -122,7 +122,7 @@ export default function FicheAdminModal({ manifest, ficheGroups, onClose, onFich
       cancelImport();
       onFichesChanged();
     } catch (e) {
-      flash(e.message === "unauthorized" ? "Mot de passe incorrect." : "Envoi impossible.");
+      flash(e.message === "unauthorized" ? "Mot de passe incorrect." : (e.message || "Envoi impossible."));
     } finally {
       setBusy(false);
     }
@@ -201,7 +201,7 @@ export default function FicheAdminModal({ manifest, ficheGroups, onClose, onFich
       flash(`Fiche « ${g.fiche} » retirée.`);
       onFichesChanged();
     } catch (e) {
-      flash(e.message === "unauthorized" ? "Mot de passe incorrect." : "Suppression impossible.");
+      flash(e.message === "unauthorized" ? "Mot de passe incorrect." : (e.message || "Suppression impossible."));
     } finally {
       setBusy(false);
     }
