@@ -26,14 +26,15 @@ export default function FicheFilter({ ficheGroups, active, onChange }) {
   const normalizedQuery = query.trim().toLowerCase();
   const visibleFiches = ficheGroups.filter((g) => {
     const matiere = g.matiere || DEFAULT_MATIERE;
-    if (matiereFilter !== "all" && matiere !== matiereFilter) return false;
-    if (normalizedQuery && !g.fiche.toLowerCase().includes(normalizedQuery)) return false;
+    if (matiere !== matiereFilter) return false;
+    if (normalizedQuery && !g.fiche.toLowerCase().includes(normalizedQuery))
+      return false;
     return true;
   });
 
   const options = [
     { fiche: "all", label: "Toutes les fiches" },
-    ...visibleFiches.map((g) => ({ fiche: g.fiche, label: g.fiche }))
+    ...visibleFiches.map((g) => ({ fiche: g.fiche, label: g.fiche })),
   ];
 
   return (
@@ -54,7 +55,9 @@ export default function FicheFilter({ ficheGroups, active, onChange }) {
             key={m.matiere}
             type="button"
             className={`filter-pill matiere-pill${matiereFilter === m.matiere ? " active" : ""}`}
-            onClick={() => setMatiereFilter(matiereFilter === m.matiere ? "all" : m.matiere)}
+            onClick={() =>
+              setMatiereFilter(matiereFilter === m.matiere ? "all" : m.matiere)
+            }
           >
             📁 {m.matiere} ({m.count})
           </button>
@@ -82,9 +85,10 @@ export default function FicheFilter({ ficheGroups, active, onChange }) {
             {opt.label}
           </button>
         ))}
-        {(normalizedQuery || matiereFilter !== "all") && visibleFiches.length === 0 && (
-          <span className="csv-hint">Aucune fiche ne correspond.</span>
-        )}
+        {(normalizedQuery || matiereFilter !== "all") &&
+          visibleFiches.length === 0 && (
+            <span className="csv-hint">Aucune fiche ne correspond.</span>
+          )}
       </div>
     </div>
   );
